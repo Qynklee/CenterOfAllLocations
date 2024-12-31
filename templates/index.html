@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenStreetMap with Folium</title>
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+        #calculate_center {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Choose Locations on the Map</h1>
+    <div id="map"></div>
+    <button id="calculate_center">Calculate Center</button>
+
+    <script>
+        // Initialize the map and set its view to the default coordinates
+        var map = L.map('map').setView([20.5937, 78.9629], 5);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Array to store selected locations
+        var selectedLocations = [];
+
+        // Add an event listener to the map for click events
+        map.on('click', function(e) {
+            // Add a marker to the clicked location
+            var marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(map);
+            // Store the latitude and longitude of the clicked location
+            selectedLocations.push(e.latlng);
+        });
+
+        // Handle the click event of the "Calculate Center" button
+        $('#calculate_center').click(function() {
+            // Send the selected locations to the server for processing
+            $.ajax({
+                url: '/calculate_center',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({locations: selectedLocations}),
+                success: function(response) {
+                    // Get the center coordinates from the server response
+                    var center = response.center;
+                    // Add a marker at the center location
+                    L.marker([center.lat, center.lng], {
+                        icon: L.icon({iconUrl: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'})
+                    }).addTo(map).bindPopup('Center').openPopup();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
